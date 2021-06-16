@@ -9,6 +9,20 @@ from sklearn.feature_extraction.text import TfidfVectorizer
 
 def read_tsv(filename):
     """
+    tsv format (no header)
+    label   txt1    txt2
+    """
+    with open(filename, "r") as f:
+        data = f.readlines()
+    data = [d.split("\t") for d in data]
+    labels = [d[0] for d in data]
+    labels = label_scheme(labels)
+    txt1 = [d[1] for d in data]
+    txt2 = [d[2] for d in data]
+    return labels, txt1, txt2
+
+def read_opus_pb_tsv(filename):
+    """
     tsv format
     label   source  similarity      txt1    txt2
     """
@@ -50,14 +64,20 @@ if __name__=="__main__":
     """
     
     parser = argparse.ArgumentParser()
-    parser.add_argument('--data', required=True)
+    parser.add_argument('--data', nargs="+", required=True)
+    parser.add_argument('--min', type=int, default=2, help="TFIDF minimum")
+    parser.add_argument('--max', type=int, default=5, help="TFIDF maximum")
+    parser.add_argument('--analyzer', type=str, default="char_wb", help="TFIDF analyzer, word, char, or char_wb")
     args = parser.parse_args()
 
     # read data - need s1, s2, label
-    labels, txt1, txt2 = read_tsv(args.data)
+    labels, txt1, txt2 = [], [], []
+    for data in args.data:
+        labels_s, txt1_s, txt2_s = read_tsv(data)
+        labels.extend(labels_s); txt1.extend(txt1_s); txt2.extend(txt2_s)
 
     # tf-idf vectorization
-    vectorizer = TfidfVectorizer(ngram_range=(2,5), analyzer="char_wb") #, stop_words=stop_words)
+    vectorizer = TfidfVectorizer(ngram_range=(args.min, args.max), analyzer=args.analyzer) #, stop_words=stop_words)
     vectorizer.fit(txt1+txt2)
     txt1_encoded = vectorizer.transform(txt1)
     txt2_encoded = vectorizer.transform(txt2)
