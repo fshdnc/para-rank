@@ -66,6 +66,7 @@ if __name__=="__main__":
     
     parser = argparse.ArgumentParser()
     parser.add_argument('--data', nargs="+", required=True)
+    parser.add_argument('--pooling', type=str, default='AVG', help="ACG, CLS or MAX")
     args = parser.parse_args()
 
     # read data - need s1, s2, label
@@ -74,12 +75,18 @@ if __name__=="__main__":
         labels_s, txt1_s, txt2_s = read_tsv(data)
         labels.extend(labels_s); txt1.extend(txt1_s); txt2.extend(txt2_s)
 
+    txt = list(set(txt1 + txt2))
+
+    # precompute the index of the pair
+    txt2_correct_answers = [txt.index(s) for s in txt1]
+    txt1_correct_answers = [txt.index(s) for s in txt2]
+    
     # bert embedding
-    txt1_encoded = embed(tokenize(txt1), bert_model, how_to_pool="CLS")
-    txt2_encoded = embed(tokenize(txt2), bert_model, how_to_pool="CLS")
+    txt_encoded = embed(tokenize(txt), bert_model, how_to_pool=args.pooling)
+    txt_order_encoded = embed(tokenize(txt1+txt2), bert_model, how_to_pool=args.pooling)
     
     # rank
-    ranks = rank(txt1_encoded, txt2_encoded)
+    ranks = rank(txt_encoded, txt_order_encoded)
     labels = labels + labels
     assert len(ranks)==len(labels)
     

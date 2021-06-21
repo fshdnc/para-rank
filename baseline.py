@@ -29,15 +29,20 @@ if __name__=="__main__":
     for data in args.data:
         labels_s, txt1_s, txt2_s = read_tsv(data)
         labels.extend(labels_s); txt1.extend(txt1_s); txt2.extend(txt2_s)
+    txt = list(set(txt1 + txt2))
 
+    # precompute the index of the pair
+    txt2_correct_answers = [txt.index(s) for s in txt1]
+    txt1_correct_answers = [txt.index(s) for s in txt2]
+    
     # tf-idf vectorization
     vectorizer = TfidfVectorizer(ngram_range=(args.min, args.max), analyzer=args.analyzer) #, stop_words=stop_words)
     vectorizer.fit(txt1+txt2)
-    txt1_encoded = vectorizer.transform(txt1)
-    txt2_encoded = vectorizer.transform(txt2)
+    txt_encoded = vectorizer.transform(txt)
+    txt_order_encoded = vectorizer.transform(txt1+txt2)
     
     # rank
-    ranks = rank(txt1_encoded, txt2_encoded)
+    ranks = rank(txt_order_encoded, txt_encoded, txt1_correct_answers+txt2_correct_answers)
     labels = labels + labels
     assert len(ranks)==len(labels)
     

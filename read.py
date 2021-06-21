@@ -37,15 +37,14 @@ def label_scheme(labels):
     new_labels = [l.replace("<","a").replace("s","").replace(">","a") for l in labels]
     return new_labels
 
-def rank(vector1, vector2):
+def rank(vector_no_order, vector_order, correct_order):
     # takes in two vectors, return the ranking
     ranks = []
-    for vec1, vec2 in ((vector1, vector2), (vector2, vector1)):
-        sim_matrix = cosine_similarity(vec1, vec2)
-        for index, sims in enumerate(sim_matrix):
-            sims = [(i,sim) for i,sim in enumerate(sims)]
-            sims.sort(key=lambda x:x[1], reverse=True)
-            rank = [i for i, sim in sims]
-            rank = rank.index(index)
-            ranks.append(rank)
+    sim_matrix = cosine_similarity(vector_no_order, vector_order)
+    for index, sims in enumerate(sim_matrix):
+        sims = [(i,sim) for i,sim in enumerate(sims)]
+        sims.sort(key=lambda x:x[1], reverse=True)
+        rank = [i for i, sim in sims][1:]
+        rank = rank.index(correct_order[index])
+        ranks.append(rank)
     return ranks

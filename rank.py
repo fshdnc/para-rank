@@ -20,19 +20,18 @@ def str2bool(v):
     else:
         raise argparse.ArgumentTypeError('Boolean value expected.')
 
-def print_ranking(vector1, vector2, txt1, txt2, labels):
+def print_ranking(vector_order, vector_set, txt1, txt2, labels, correct_order):
     import sys
     # prints the sentences, labels,
     # and ranking to stderr
     print("Label\trank\ts1\ts2\t", file=sys.stderr)
-    for vec1, vec2 in ((vector1, vector2), (vector2, vector1)):
-        sim_matrix = cosine_similarity(vec1, vec2)
-        for index, sims in enumerate(sim_matrix):
-            sims = [(i,sim) for i,sim in enumerate(sims)]
-            sims.sort(key=lambda x:x[1], reverse=True)
-            rank = [i for i, sim in sims]
-            rank = rank.index(index)
-            print(labels[index], rank, txt1[index], txt2[index], sep="\t", file=sys.stderr)
+    sim_matrix = cosine_similarity(vector_order, vector_set)
+    for index, sims in enumerate(sim_matrix):
+        sims = [(i,sim) for i,sim in enumerate(sims)]
+        sims.sort(key=lambda x:x[1], reverse=True)
+        rank = [i for i, sim in sims][1:]
+        rank = rank.index(correct_order[index])
+        print(labels[index], rank, txt1[index], txt2[index], sep="\t", file=sys.stderr)
     
 if __name__=="__main__":
     """
@@ -55,15 +54,21 @@ if __name__=="__main__":
     for data in args.data:
         labels_s, txt1_s, txt2_s = read_tsv(data)
         labels.extend(labels_s); txt1.extend(txt1_s); txt2.extend(txt2_s)
-        
+
+    txt = list(set(txt1 + txt2))
+    
+    # precompute the index of the pair
+    txt2_correct_answers = [txt.index(s) for s in txt1]
+    txt1_correct_answers = [txt.index(s) for s in txt2]
+    
     # encode by sbert
     model = SentenceTransformer(args.sbert)
-    txt1_encoded = model.encode(txt1)
-    txt2_encoded = model.encode(txt2)
+    txt_encoded = model.encode(txt)
+    txt_order_encoded = model.encode(txt1+txt2)
 
     if args.rank:
         # rank
-        ranks = rank(txt1_encoded, txt2_encoded)
+        ranks = rank(txt_order_encoded, txt_encoded, txt1_correct_answers+txt2_correct_answers)
         labels = labels + labels # two sides
         assert len(ranks)==len(labels)
     
@@ -76,10 +81,10 @@ if __name__=="__main__":
             if label=="4":
                 top1 = sum([1 for r in label_rank if r==0])
                 print("TOP_1_ACC\t{:.4f} ({}/{})".format(top1/len(label_rank), top1, len(label_rank)))
-        print("SBERT model:",args.sbert)
+        print("SBERT model:", args.sbert)
         print("\t".join(results))
 
     if args.prt:
-        print_ranking(txt1_encoded, txt2_encoded, txt1, txt2, labels)
+        print_ranking(txt_order_encoded, txt_encoded, txt1+txt2, txt2+txt1, labels, txt1_correct_answers+txt2_correct_answers)
 
 
