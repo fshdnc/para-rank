@@ -20,18 +20,19 @@ def str2bool(v):
     else:
         raise argparse.ArgumentTypeError('Boolean value expected.')
 
-def print_ranking(vec1, vec2, txt1, txt2, labels):
+def print_ranking(vector1, vector2, txt1, txt2, labels):
     import sys
     # prints the sentences, labels,
     # and ranking to stderr
-    sim_matrix = cosine_similarity(vec1, vec2)
     print("Label\trank\ts1\ts2\t", file=sys.stderr)
-    for index, sims in enumerate(sim_matrix):
-        sims = [(i,sim) for i,sim in enumerate(sims)]
-        sims.sort(key=lambda x:x[1], reverse=True)
-        rank = [i for i, sim in sims]
-        rank = rank.index(index)
-        print(labels[index], rank, txt1[index], txt2[index], sep="\t", file=sys.stderr)
+    for vec1, vec2 in ((vector1, vector2), (vector2, vector1)):
+        sim_matrix = cosine_similarity(vec1, vec2)
+        for index, sims in enumerate(sim_matrix):
+            sims = [(i,sim) for i,sim in enumerate(sims)]
+            sims.sort(key=lambda x:x[1], reverse=True)
+            rank = [i for i, sim in sims]
+            rank = rank.index(index)
+            print(labels[index], rank, txt1[index], txt2[index], sep="\t", file=sys.stderr)
     
 if __name__=="__main__":
     """
@@ -63,14 +64,18 @@ if __name__=="__main__":
     if args.rank:
         # rank
         ranks = rank(txt1_encoded, txt2_encoded)
+        labels = labels + labels # two sides
         assert len(ranks)==len(labels)
     
         # results
-        results = []
+        results = ["RESULTS"]
         for label in ["1","2","3","4ai","4a","4i","4"]:
             label_rank = [r for l, r in zip(labels, ranks) if l==label]
             #print("Label\t{}\tOcc\t{}\tAvg_rank\t{:.3f}".format(label, len(label_rank),np.mean(label_rank)))
             results.append(str(np.round(np.mean(label_rank),3)))
+            if label=="4":
+                top1 = sum([1 for r in label_rank if r==0])
+                print("TOP_1_ACC\t{:.4f} ({}/{})".format(top1/len(label_rank), top1, len(label_rank)))
         print("SBERT model:",args.sbert)
         print("\t".join(results))
 
