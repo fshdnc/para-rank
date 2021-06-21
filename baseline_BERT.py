@@ -80,6 +80,7 @@ if __name__=="__main__":
     
     # rank
     ranks = rank(txt1_encoded, txt2_encoded)
+    labels = labels + labels
     assert len(ranks)==len(labels)
     
     # results
