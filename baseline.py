@@ -29,11 +29,15 @@ if __name__=="__main__":
     for data in args.data:
         labels_s, txt1_s, txt2_s = read_tsv(data)
         labels.extend(labels_s); txt1.extend(txt1_s); txt2.extend(txt2_s)
-    txt = list(set(txt1 + txt2))
+    txt1 = [t.lower() for t in txt1]
+    txt2 = [t.lower() for t in txt2]
 
-    # precompute the index of the pair
-    txt2_correct_answers = [txt.index(s) for s in txt1]
-    txt1_correct_answers = [txt.index(s) for s in txt2]
+    txt = list(set(txt1 + txt2))
+    # mapping
+    mapping = {i:[j for j,t in enumerate(txt) if s==t] for i,s in enumerate(txt1+txt2)}
+
+    # indices of the correct answer
+    correct_indices = [i+len(txt1) for i in range(len(txt2))] + [i for i in range(len(txt1))]
     
     # tf-idf vectorization
     vectorizer = TfidfVectorizer(ngram_range=(args.min, args.max), analyzer=args.analyzer) #, stop_words=stop_words)
@@ -42,16 +46,19 @@ if __name__=="__main__":
     txt_order_encoded = vectorizer.transform(txt1+txt2)
     
     # rank
-    ranks = rank(txt_order_encoded, txt_encoded, txt1_correct_answers+txt2_correct_answers)
+    ranks = rank(txt_order_encoded, txt_encoded, correct_indices, mapping)
     labels = labels + labels
     assert len(ranks)==len(labels)
     
     # results
-    results = []
+    results = ["RESULTS"]
     for label in ["1","2","3","4ai","4a","4i","4"]:
         label_rank = [r for l, r in zip(labels, ranks) if l==label]
         #print("Label\t{}\tOcc\t{}\tAvg_rank\t{:.3f}".format(label, len(label_rank),np.mean(label_rank)))
         results.append(str(np.round(np.mean(label_rank),3)))
+        if label=="4":
+            top1 = sum([1 for r in label_rank if r==0])
+            print("TOP_1_ACC\t{:.4f} ({}/{})".format(top1/len(label_rank), top1, len(label_rank)))
     print("TF-IDF baseline")
     print("\t".join(results))
     

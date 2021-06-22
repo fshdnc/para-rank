@@ -56,10 +56,11 @@ if __name__=="__main__":
         labels.extend(labels_s); txt1.extend(txt1_s); txt2.extend(txt2_s)
 
     txt = list(set(txt1 + txt2))
+    # mapping
+    mapping = {i:[j for j,t in enumerate(txt) if s==t] for i,s in enumerate(txt1+txt2)}
     
-    # precompute the index of the pair
-    txt2_correct_answers = [txt.index(s) for s in txt1]
-    txt1_correct_answers = [txt.index(s) for s in txt2]
+    # indices of the correct answer
+    correct_indices = [i+len(txt1) for i in range(len(txt2))] + [i for i in range(len(txt1))]
     
     # encode by sbert
     model = SentenceTransformer(args.sbert)
@@ -68,7 +69,7 @@ if __name__=="__main__":
 
     if args.rank:
         # rank
-        ranks = rank(txt_order_encoded, txt_encoded, txt1_correct_answers+txt2_correct_answers)
+        ranks = rank(txt_order_encoded, txt_encoded, correct_indices, mapping)
         labels = labels + labels # two sides
         assert len(ranks)==len(labels)
     
@@ -84,7 +85,11 @@ if __name__=="__main__":
         print("SBERT model:", args.sbert)
         print("\t".join(results))
 
-    if args.prt:
-        print_ranking(txt_order_encoded, txt_encoded, txt1+txt2, txt2+txt1, labels, txt1_correct_answers+txt2_correct_answers)
+        if args.prt:
+            import sys
+            left = [t for t in txt1+txt2]
+            right = [t for t in txt2+txt1]
+            for i, r in enumerate(ranks):
+                print(labels[i], r, left[i], right[i], sep="\t", file=sys.stderr)
 
 
