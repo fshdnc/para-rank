@@ -29,8 +29,10 @@ if __name__=="__main__":
     for data in args.data:
         labels_s, txt1_s, txt2_s = read_tsv(data)
         labels.extend(labels_s); txt1.extend(txt1_s); txt2.extend(txt2_s)
-    txt1 = [t.lower() for t in txt1]
-    txt2 = [t.lower() for t in txt2]
+    #txt1 = [t.lower() for t in txt1]
+    #txt2 = [t.lower() for t in txt2]
+    txt1 = [t for t in txt1]
+    txt2 = [t for t in txt2]
 
     txt = list(set(txt1 + txt2))
     # mapping
@@ -52,15 +54,17 @@ if __name__=="__main__":
     
     # results
     results = ["RESULTS"]
+    top1_all = 0
+    all_para = 0
     for label in ["1","2","3","4ai","4a","4i","4"]:
         label_rank = [r for l, r in zip(labels, ranks) if l==label]
         #print("Label\t{}\tOcc\t{}\tAvg_rank\t{:.3f}".format(label, len(label_rank),np.mean(label_rank)))
         results.append(str(np.round(np.mean(label_rank),3)))
-        if label=="4":
+        if "3" in label or "4" in label:
             top1 = sum([1 for r in label_rank if r==0])
-            print("TOP_1_ACC\t{:.4f} ({}/{})".format(top1/len(label_rank), top1, len(label_rank)))
-    print("TF-IDF baseline")
+            top1_all = top1_all + top1
+            all_para = all_para + len(label_rank)
+            print("LABEL_{}_TOP_1_ACC\t{:.4f} ({}/{})".format(label, top1/len(label_rank), top1, len(label_rank)))
+    print("BERT baseline")
+    print("TOP_1_ACC\t{:.4f} ({}/{})".format(top1_all/all_para, top1_all, all_para))
     print("\t".join(results))
-    
-
-
