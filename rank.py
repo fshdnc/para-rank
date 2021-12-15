@@ -3,8 +3,11 @@
 import argparse
 import numpy as np
 from sklearn.metrics.pairwise import cosine_similarity
+from sklearn.neighbors import DistanceMetric
 from sentence_transformers import SentenceTransformer
 from read import *
+
+#dist = DistanceMetric.get_metric('canberra')
 
 def str2bool(v):
     '''
@@ -26,6 +29,7 @@ def print_ranking(vector_order, vector_set, txt1, txt2, labels, correct_order):
     # and ranking to stderr
     print("Label\trank\ts1\ts2\t", file=sys.stderr)
     sim_matrix = cosine_similarity(vector_order, vector_set)
+    #sim_matrix = dist.pairwise(vector_order, vector_set)
     for index, sims in enumerate(sim_matrix):
         sims = [(i,sim) for i,sim in enumerate(sims)]
         sims.sort(key=lambda x:x[1], reverse=True)
@@ -52,7 +56,7 @@ if __name__=="__main__":
     # read data - need s1, s2, label
     labels, txt1, txt2 = [], [], []
     for data in args.data:
-        labels_s, txt1_s, txt2_s = read_tsv(data)
+        labels_s, txt1_s, txt2_s = read_tsv(data) # labels transformed
         labels.extend(labels_s); txt1.extend(txt1_s); txt2.extend(txt2_s)
 
     txt = list(set(txt1 + txt2))
@@ -75,15 +79,22 @@ if __name__=="__main__":
     
         # results
         results = ["RESULTS"]
+        top1s = ["TOP1"]
         for label in ["1","2","3","4ai","4a","4i","4"]:
             label_rank = [r for l, r in zip(labels, ranks) if l==label]
+            if not label_rank: # no example for the label
+                results.append("-")
+                top1s.append("-")
+                continue
             #print("Label\t{}\tOcc\t{}\tAvg_rank\t{:.3f}".format(label, len(label_rank),np.mean(label_rank)))
             results.append(str(np.round(np.mean(label_rank),3)))
-            if label=="4":
-                top1 = sum([1 for r in label_rank if r==0])
-                print("TOP_1_ACC\t{:.4f} ({}/{})".format(top1/len(label_rank), top1, len(label_rank)))
+            top1 = sum([1 for r in label_rank if r==0])
+            top1s.append(str(np.round(top1/len(label_rank),3)))
+            #print("TOP_1_ACC\t{:.4f} ({}/{})".format(top1/len(label_rank), top1, len(label_rank)))
         print("SBERT model:", args.sbert)
+        print("Number of examples:", len(labels))
         print("\t".join(results))
+        print("\t".join(top1s))
 
         if args.prt:
             import sys

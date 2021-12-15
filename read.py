@@ -1,6 +1,9 @@
 #!/usr/bin/env python3
 
 from sklearn.metrics.pairwise import cosine_similarity
+#from sklearn.neighbors import DistanceMetric
+
+#dist = DistanceMetric.get_metric('canberra')
 
 def read_tsv(filename):
     """
@@ -40,7 +43,8 @@ def label_scheme(labels):
 def rank(vector_order, vector_no_order, correct_indices, mapping):
     # takes in two vectors, return the ranking
     ranks = []
-    sim_matrix = cosine_similarity(vector_order, vector_no_order)
+    sim_matrix = cosine_similarity(vector_order, vector_no_order) #; print("Using cosine similarity")
+    #sim_matrix = dist.pairwise(vector_order, vector_no_order); print("Using Canberra distance")
     assert len(sim_matrix)==len(correct_indices)
     for index, sims in enumerate(sim_matrix):
         sims = [(i,sim) for i,sim in enumerate(sims)]

@@ -8,6 +8,20 @@ from sklearn.metrics.pairwise import cosine_similarity
 from sklearn.feature_extraction.text import TfidfVectorizer
 from read import *
 
+def str2bool(v):
+    '''
+    https://stackoverflow.com/questions/15008758/parsing-boolean-values-with-argparse
+    Downside: the 'nargs' might catch a positional argument
+    '''
+    if isinstance(v, bool):
+        return v
+    if v.lower() in ('yes', 'true', 't', 'y', '1'):
+        return True
+    elif v.lower() in ('no', 'false', 'f', 'n', '0'):
+        return False
+    else:
+        raise argparse.ArgumentTypeError('Boolean value expected.')
+
 if __name__=="__main__":
     """
     for sentpair in data:
@@ -21,6 +35,7 @@ if __name__=="__main__":
     parser.add_argument('--data', nargs="+", required=True)
     parser.add_argument('--min', type=int, default=2, help="TFIDF minimum")
     parser.add_argument('--max', type=int, default=5, help="TFIDF maximum")
+    parser.add_argument("--prt", type=str2bool, nargs='?', const=True, default=False, help="Print ranking results to stderr.")
     parser.add_argument('--analyzer', type=str, default="char_wb", help="TFIDF analyzer, word, char, or char_wb")
     args = parser.parse_args()
 
@@ -51,20 +66,30 @@ if __name__=="__main__":
     ranks = rank(txt_order_encoded, txt_encoded, correct_indices, mapping)
     labels = labels + labels
     assert len(ranks)==len(labels)
-    
+
     # results
     results = ["RESULTS"]
-    top1_all = 0
-    all_para = 0
+    top1s = ["TOP1"]
     for label in ["1","2","3","4ai","4a","4i","4"]:
         label_rank = [r for l, r in zip(labels, ranks) if l==label]
+        if not label_rank: # no example for the label
+            results.append("-")
+            top1s.append("-")
+            continue
         #print("Label\t{}\tOcc\t{}\tAvg_rank\t{:.3f}".format(label, len(label_rank),np.mean(label_rank)))
         results.append(str(np.round(np.mean(label_rank),3)))
-        if "3" in label or "4" in label:
-            top1 = sum([1 for r in label_rank if r==0])
-            top1_all = top1_all + top1
-            all_para = all_para + len(label_rank)
-            print("LABEL_{}_TOP_1_ACC\t{:.4f} ({}/{})".format(label, top1/len(label_rank), top1, len(label_rank)))
-    print("BERT baseline")
-    print("TOP_1_ACC\t{:.4f} ({}/{})".format(top1_all/all_para, top1_all, all_para))
+        top1 = sum([1 for r in label_rank if r==0])
+        top1s.append(str(np.round(top1/len(label_rank),3)))
+        #print("TOP_1_ACC\t{:.4f} ({}/{})".format(top1/len(label_rank), top1, len(label_rank)))
+    print("TFIDF:", args)
+    print("Number of examples:", len(labels))
     print("\t".join(results))
+    print("\t".join(top1s))
+
+    if args.prt:
+        import sys
+        left = [t for t in txt1+txt2]
+        right = [t for t in txt2+txt1]
+        for i, r in enumerate(ranks):
+            print(labels[i], r, left[i], right[i], sep="\t", file=sys.stderr)
+
