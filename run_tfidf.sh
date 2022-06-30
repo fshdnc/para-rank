@@ -20,12 +20,12 @@ module purge
 module load python-data/3.7.6-1
 
 #--data ../Turku-paraphrase-corpus/agg_data/test.tsv
-# ../Turku-paraphrase-corpus/testset/opus-pb-test.tsv
+# /scratch/project_2002820/lihsin/datasets/Turku-paraphrase-corpus/data-fi/test.tsv
 python3 baseline.py --min $min \
     --max $max \
     --analyzer $analyzer \
     --prt \
-    --data /scratch/project_2002820/lihsin/datasets/Turku-paraphrase-corpus/data-fi/test.tsv
+    --data ../Turku-paraphrase-corpus/testset/opus-pb-test.tsv
 
 seff $SLURM_JOBID
 echo "END: $(date)"

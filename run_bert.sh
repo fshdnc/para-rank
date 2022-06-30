@@ -15,15 +15,15 @@ set -euo pipefail
 echo "START: $(date)"
 
 module purge
-module load pytorch/1.3.1
+module load pytorch/1.10
 
 #export TRANSFORMERS_CACHE=$LOCAL_SCRATCH
-#../Turku-paraphrase-corpus/testset/opus-pb-test.tsv \
+#/scratch/project_2002820/lihsin/datasets/Turku-paraphrase-corpus/data-fi/test.tsv \
 #--data ../Turku-paraphrase-corpus/agg_data/test.tsv \
 python3 baseline_BERT.py \
-    --data /scratch/project_2002820/lihsin/datasets/Turku-paraphrase-corpus/data-fi/test.tsv \
+    --data ../Turku-paraphrase-corpus/testset/opus-pb-test.tsv \
     --prt \
-    --pooling "$1"
+    --pooling AVG
 
 seff $SLURM_JOBID
 echo "END: $(date)"
