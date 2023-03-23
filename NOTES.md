@@ -25,3 +25,4 @@ In [11]: import numpy as np
 ```
 
 2022.5.13 All files used for debugging deleted. The problem was that PyTorch module 1.3.1 should not have been used. Use 1.10
+2023.3.23 puhti cleanup, results stored in Allas `/scratch/project_2002820/lihsin/para-rank/para-rank-results.tar`
